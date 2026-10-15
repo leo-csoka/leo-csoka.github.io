@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><title>neural racer</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
+<style>
+@font-face{font-family:SuperDario;src:local("SuperDario"),local("Super Dario"),local("SuperDario-Regular"),url("SuperDario.ttf") format("truetype")}
+:root{--bg:#06100a;--wall:#030805;--win:#06100a;--fg:#4dff88;--dim:#238a47;--acc:#9bffbb;--grn:#4dff88;--red:#ff6b5e;--yel:#d4ff4d;--bd:#17482a;--road:#0d2615;--scan:#0000005c;--sw:#4dff880a;--sw2:#4dff8818;--glow:#4dff8866;--ff:SuperDario,VT323,ui-monospace,monospace;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+
+
+
+html,body{height:100%;margin:0;overflow:hidden}
+body{background:var(--wall);color:var(--fg);font:18px/1.3 var(--ff);text-shadow:0 0 5px var(--glow)}
+#bar{position:fixed;top:0;left:0;right:0;z-index:5000;display:flex;justify-content:space-between;align-items:center;gap:12px;padding:calc(env(safe-area-inset-top,0px) + 7px) 16px 7px;background:var(--wall);border-bottom:1px solid var(--bd);font-size:17px}
+.ws u{text-decoration:none;color:var(--wall);background:var(--acc);padding:0 6px;border-radius:3px}
+.win{position:fixed;display:flex;flex-direction:column;min-width:260px;min-height:170px;background:var(--win);border:2px solid var(--bd);border-radius:8px;box-shadow:0 12px 40px #0007;resize:both;overflow:hidden}
+.win.f{border-color:var(--acc)}
+.tb{display:flex;gap:14px;align-items:center;padding:9px 14px;background:var(--wall);border-bottom:1px solid var(--bd);color:var(--dim);cursor:grab;touch-action:none;user-select:none;white-space:nowrap;overflow:hidden;line-height:1}
+.dots{display:flex;gap:7px;flex:none}.dots i{width:11px;height:11px;border-radius:50%;background:var(--bd)}
+.tt{min-width:0;overflow:hidden;text-overflow:ellipsis;letter-spacing:.03em}.sub{color:var(--dim);margin-left:10px}
+.f .tb{color:var(--fg)}.f .dots i:nth-child(1){background:var(--red)}.f .dots i:nth-child(2){background:var(--yel)}.f .dots i:nth-child(3){background:var(--grn)}
+#out{flex:1;min-height:0;overflow:auto;padding:12px 16px;white-space:pre-wrap;word-break:break-word}
+#ln{display:flex;gap:10px;padding:10px 16px;border-top:1px solid var(--bd)}
+#in{flex:1;min-width:0;background:none;border:0;outline:0;color:var(--fg);font:inherit;caret-color:var(--acc)}
+#vb{flex:1;min-height:0;position:relative}#cv{position:absolute;inset:0;width:100%;height:100%}
+.g{color:var(--grn)}.r{color:var(--red)}.y{color:var(--yel)}.d,.dim{color:var(--dim)}.b,.acc{color:var(--acc)}
+#in{text-shadow:0 0 5px var(--glow);caret-shape:block}
+#crt{position:fixed;inset:0;z-index:2147483000;pointer-events:none;overflow:hidden;contain:strict;background:repeating-linear-gradient(to bottom,transparent 0 2px,var(--scan) 2px 3px)}
+#crt::after{content:"";position:absolute;left:0;right:0;top:0;height:16vh;background:var(--sw);border-bottom:2px solid var(--sw2);will-change:transform;animation:roll 8s linear infinite}
+@keyframes roll{from{transform:translateY(-20vh)}to{transform:translateY(110vh)}}
+.nofx #crt{display:none}.nofx,.nofx #in{text-shadow:none}
+@media(prefers-reduced-motion:reduce){#crt{animation:none}#crt::after{display:none}}
+@media(max-width:700px){#st{display:none}}
+</style></head><body>
+<div id="bar"><span><span class="ws"><u>1</u> 2 3</span></span><span id="clk"></span><span id="st" class="dim"></span></div>
+<div class="win" id="tw"><div class="tb"><span class="dots"><i></i><i></i><i></i></span><span class="tt">terminal<span class="sub">mlp-lab</span></span></div><div id="out"></div><div id="ln"><span class="b">$</span><input id="in" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="terminal input"></div></div>
+<div class="win" id="vw"><div class="tb"><span class="dots"><i></i><i></i><i></i></span><span class="tt">viewer<span class="sub" id="tn">track-01 · hairpin hell</span></span></div><div id="vb"><canvas id="cv"></canvas></div></div>
+<div id="crt" aria-hidden="true"></div>
+<script>
+const $=s=>document.querySelector(s),R=document.documentElement,css=n=>getComputedStyle(R).getPropertyValue(n).trim();
+const W=800,H=560,HW=19,K=12,SEG=24,MAXT=1600,MAXV=4,RAY=140,PI=Math.PI,FF='SuperDario,VT323,monospace';
+// ---------- track ----------
+const TR=[[[120,110],[280,70],[430,130],[540,70],[690,90],[740,190],[610,235],[700,320],[740,440],[630,510],[500,450],[420,520],[290,500],[200,420],[330,340],[130,290],[60,200]],
+[[140,280],[230,130],[420,90],[620,120],[710,260],[640,420],[450,470],[260,430]],
+[[150,90],[360,60],[560,90],[700,160],[730,290],[640,380],[720,470],[560,510],[450,440],[340,510],[200,490],[90,400],[200,320],[110,220]]];
+let N,C=[];
+function build(P){N=P.length*SEG;C=[];for(let i=0;i<P.length;i++){const p=[-1,0,1,2].map(k=>P[(i+k+P.length)%P.length]);for(let s=0;s<SEG;s++){const t=s/SEG,t2=t*t,t3=t2*t;C.push([0,1].map(d=>.5*(2*p[1][d]+(-p[0][d]+p[2][d])*t+(2*p[0][d]-5*p[1][d]+4*p[2][d]-p[3][d])*t2+(-p[0][d]+3*p[1][d]-3*p[2][d]+p[3][d])*t3)))}}}
+const mkC=()=>{const c=document.createElement('canvas');c.width=W;c.height=H;return c};
+const path=x=>{x.beginPath();C.forEach((p,i)=>i?x.lineTo(p[0],p[1]):x.moveTo(p[0],p[1]));x.closePath()};
+const mc=mkC(),mx=mc.getContext('2d',{willReadFrequently:true});let M=new Uint8Array(W*H);
+function mask(){mx.clearRect(0,0,W,H);mx.lineJoin='round';mx.lineWidth=HW*2;mx.strokeStyle='#fff';path(mx);mx.stroke();const md=mx.getImageData(0,0,W,H).data;for(let i=0;i<M.length;i++)M[i]=md[i*4+3]>127?1:0}
+const on=(x,y)=>x>=0&&y>=0&&x<W&&y<H&&M[(y|0)*W+(x|0)]===1;
+const tv=mkC();let Q={},dirty=2;
+function paint(){dirty=2;Q={fg:css('--fg'),dim:css('--dim'),acc:css('--acc'),grn:css('--grn'),red:css('--red'),yel:css('--yel'),wall:css('--wall'),win:css('--win'),bd:css('--bd'),road:css('--road')};
+ const x=tv.getContext('2d');x.clearRect(0,0,W,H);x.fillStyle=Q.win;x.fillRect(0,0,W,H);
+ x.strokeStyle=Q.bd;x.globalAlpha=.4;x.lineWidth=1;x.beginPath();for(let g=0;g<=W;g+=40){x.moveTo(g,0);x.lineTo(g,H)}for(let g=0;g<=H;g+=40){x.moveTo(0,g);x.lineTo(W,g)}x.stroke();
+ x.lineJoin=x.lineCap='round';x.globalAlpha=.07;x.lineWidth=HW*2+36;x.strokeStyle=Q.acc;path(x);x.stroke();x.globalAlpha=1;
+ x.lineWidth=HW*2+10;x.strokeStyle=Q.bd;path(x);x.stroke();
+ x.lineCap='butt';x.setLineDash([8,8]);x.globalAlpha=.7;x.strokeStyle=Q.acc;path(x);x.stroke();x.setLineDash([]);x.globalAlpha=1;x.lineCap='round';
+ x.lineWidth=HW*2;x.strokeStyle=Q.dim;path(x);x.stroke();x.lineWidth=HW*2-4;x.strokeStyle=Q.road;path(x);x.stroke();
+ x.setLineDash([10,14]);x.lineWidth=2;x.strokeStyle=Q.dim;path(x);x.stroke();x.setLineDash([]);
+ const gate=(i,col,w)=>{const a=C[i],b=C[(i+1)%N],dx=b[0]-a[0],dy=b[1]-a[1],l=Math.hypot(dx,dy)||1;x.strokeStyle=col;x.lineWidth=w;x.beginPath();x.moveTo(a[0]-dy/l*HW,a[1]+dx/l*HW);x.lineTo(a[0]+dy/l*HW,a[1]-dx/l*HW);x.stroke()};
+ x.globalAlpha=.25;for(let i=K;i<N;i+=K)gate(i,Q.dim,1);x.globalAlpha=1;
+ const dir=i=>{const a=C[i],b=C[(i+1)%N];return[a,Math.atan2(b[1]-a[1],b[0]-a[0])]};
+ x.lineCap='butt';x.lineJoin='miter';x.strokeStyle=Q.dim;x.lineWidth=2;
+ for(let i=K/2;i<N;i+=K*2){const[a,t]=dir(i);x.save();x.translate(a[0],a[1]);x.rotate(t);x.beginPath();x.moveTo(-4,-6);x.lineTo(3,0);x.lineTo(-4,6);x.stroke();x.restore()}
+ {const[a,t]=dir(0),s=HW*2/6;x.save();x.translate(a[0],a[1]);x.rotate(t);for(let r=0;r<2;r++)for(let c=0;c<6;c++){x.fillStyle=(r+c)%2?Q.fg:Q.wall;x.fillRect((r-1)*s,-HW+c*s,s,s)}x.restore()}}
+new MutationObserver(paint).observe(R,{attributes:true,attributeFilter:['data-theme']});
+
+let tk=0;const TN=['hairpin hell','sunday loop','switchback'];
+function setTrack(i){tk=i;build(TR[i]);mask();paint();cars=[];mode='idle';$('#tn').textContent=`track-0${i+1} · ${TN[i]}`}
+// ---------- network ----------
+const INK=['rays','speed','bearing'],OUTK=['steer','throttle','brake'],ACT={tanh:Math.tanh,relu:x=>x>0?x:0,sigmoid:x=>1/(1+Math.exp(-x))};
+
+let B=[],AR,np,pop=null,best=null,bestF=-1e9,hist=[],gen=0,target=0,cars=[],gt=0,mode='idle',POP=60,MUT=.12,SPD=4;
+const mkB=(k,n,a)=>INK.includes(k)?{t:0,k,n:k=='rays'?n:1}:k=='dense'?{t:1,k,n,a:a||'tanh'}:{t:2,k};
+const srt=()=>B.sort((a,b)=>a.t-b.t);
+
+function inv(){dirty=2;pop=null;best=null;bestF=-1e9;hist=[];gen=0;cars=[];mode='idle';
+ const h=B.filter(b=>b.t==1);AR={nIn:B.filter(b=>b.t==0).reduce((s,b)=>s+b.n,0),o:B.filter(b=>b.t==2),A:h.map(b=>b.a)};AR.L=[AR.nIn,...h.map(b=>b.n),AR.o.length];
+ np=0;for(let i=0;i<AR.L.length-1;i++)np+=(AR.L[i]+1)*AR.L[i+1]}
+function fwd(g,x){let o=0;const L=AR.L;for(let l=0;l<L.length-1;l++){const n=L[l],m=L[l+1],y=new Array(m),last=l==L.length-2;
+ for(let j=0;j<m;j++){let s=g[o+n*m+j];for(let i=0;i<n;i++)s+=x[i]*g[o+i*m+j];y[j]=s}o+=(n+1)*m;
+ x=y.map((v,j)=>last?(AR.o[j].k=='brake'?ACT.sigmoid(v):Math.tanh(v)):ACT[AR.A[l]](v))}return x}
+// ---------- cars / rewards ----------
+const RW={checkpoints:0,time:0,speed:0,center:0,smooth:0,crash:0};
+const RD={checkpoints:'progress around the lap',time:'bonus for finishing a lap fast',speed:'average speed',center:'stay near the middle of the road',smooth:'low steering jitter',crash:'penalty for dying'};
+
+const rn=()=>Math.sqrt(-2*Math.log(1-Math.random()))*Math.cos(2*PI*Math.random());
+const mkCar=g=>({g,x:C[0][0],y:C[0][1],a:Math.atan2(C[3][1]-C[0][1],C[3][0]-C[0][0]),v:.5,pi:0,tot:0,max:0,lt:0,t:0,alive:1,fin:0,sv:0,cen:0,smo:0,ps:0,rs:[]});
+function inputs(c){const r=[];c.rs=[];for(const b of B){
+ if(b.k=='rays')for(let i=0;i<b.n;i++){const a=c.a+(b.n>1?-PI/2+i*PI/(b.n-1):0);let d=3;for(;d<RAY;d+=4)if(!on(c.x+Math.cos(a)*d,c.y+Math.sin(a)*d))break;d=Math.min(d,RAY);r.push(d/RAY);c.rs.push([a,d])}
+ else if(b.k=='speed')r.push(c.v/MAXV);
+ else if(b.k=='bearing'){const q=C[(c.pi+10)%N];let e=Math.atan2(q[1]-c.y,q[0]-c.x)-c.a;e=Math.atan2(Math.sin(e),Math.cos(e));r.push(e/PI)}}return r}
+function step(c){const o=fwd(c.g,inputs(c));let st=0,th=.4,br=0;
+ AR.o.forEach((b,i)=>{if(b.k=='steer')st=o[i];else if(b.k=='throttle')th=o[i];else br=o[i]});
+ c.a+=st*.08;c.v=Math.max(0,Math.min(MAXV,(c.v+(th>0?th*.1:th*.18)-br*.12)*.992));
+ c.x+=Math.cos(c.a)*c.v;c.y+=Math.sin(c.a)*c.v;c.t++;
+ let bd=0,bs=1e9;for(let d=-2;d<=8;d++){const q=C[(c.pi+d+N)%N],s=Math.hypot(q[0]-c.x,q[1]-c.y);if(s<bs){bs=s;bd=d}}
+ c.pi=(c.pi+bd+N)%N;c.tot+=bd;if(c.tot>c.max){c.max=c.tot;c.lt=c.t}
+ const f=c.v/MAXV;c.sv+=f;c.cen+=(1-Math.min(1,bs/HW))*f;c.smo+=(1-Math.abs(st-c.ps)/2)*f;c.ps=st;
+ if(c.max>=N){c.fin=1;c.alive=0}else if(!on(c.x,c.y)||c.t-c.lt>120||c.tot<-10)c.alive=0}
+function fit(c){let f=RW.checkpoints*100*c.max/K+RW.speed*c.sv+RW.center*c.cen*.5+RW.smooth*c.smo*.3;
+ if(c.fin)f+=RW.time*(1000+4000*(MAXT-c.t)/MAXT);else if(!c.alive)f-=RW.crash*200;return f}
+const pct=c=>Math.max(0,Math.round(100*c.max/N));
+const mut=g=>{const c=Float32Array.from(g);for(let i=0;i<c.length;i++){const r=Math.random();if(r<MUT)c[i]+=rn()*.35;else if(r>.995)c[i]=rn()*.7}return c};
+function initPop(){gen=0;hist=[];best=null;bestF=-1e9;pop=Array.from({length:POP},()=>{const g=new Float32Array(np);for(let i=0;i<np;i++)g[i]=rn()*.7;return g})}
+const newGen=()=>{cars=pop.map(mkCar);gt=0};
+function tick(){for(const c of cars)if(c.alive)step(c);gt++;if(!cars.some(c=>c.alive)||gt>=MAXT)end()}
+function end(){
+ if(mode=='test'){const c=cars[0];log(c.fin?`✔ lap finished in ${(c.t/60).toFixed(2)}s`:`✘ ${c.alive?'timed out':'crashed'} at ${pct(c)}% of the lap`,c.fin?'g':'r');mode='idle';return}
+ const s=cars.map(c=>({c,f:fit(c)})).sort((a,b)=>b.f-a.f),t=s[0],avg=s.reduce((a,x)=>a+x.f,0)/s.length,fn=cars.filter(c=>c.fin),f2=v=>(v>0?'+':'')+Math.round(v);
+ hist.push(t.f);if(!best||t.f>bestF){best=t.c.g;bestF=t.f}gen++;
+ log(`gen ${gen}/${target} · best ${f2(t.f)} · avg ${f2(avg)} · prog ${pct(t.c)}%`+(fn.length?` · ${fn.length} finished, lap ${(Math.min(...fn.map(c=>c.t))/60).toFixed(2)}s`:''),fn.length?'g':'');
+ if(gen>=target){mode='idle';log('training done — type test to watch the best model','g');return}
+ const g=s.map(x=>x.c.g),e=Math.max(2,Math.round(g.length*.06));pop=g.slice(0,e);while(pop.length<g.length)pop.push(mut(g[Math.random()*g.length*.3|0]));newGen()}
+// ---------- terminal ----------
+const out=$('#out'),inp=$('#in');
+function log(t,c=''){const d=document.createElement('div');if(c)d.className=c;d.textContent=t;out.append(d);while(out.childElementCount>300)out.firstElementChild.remove();out.scrollTop=out.scrollHeight}
+const err=m=>{log('error: '+m,'r')};
+function ready(){if(!AR.nIn)return err('no input blocks — try: add rays 7');const k=AR.o.map(b=>b.k);if(!k.includes('steer')||!k.includes('throttle'))return err('outputs needed: add steer · add throttle');if(!Object.values(RW).some(v=>v>0))return err('all reward weights are 0 — try: reward checkpoints 1');return 1}
+const CMD={
+help(){log('BLOCKS  add rays <n> · add speed · add bearing   (inputs)\n        add dense <units> [tanh|relu|sigmoid]   (hidden)\n        add steer · add throttle · add brake   (outputs)\nNET     net · view · rm <#|name> · rays <n>\nREWARD  reward · reward <name> <0-10>\n        names: checkpoints time speed center smooth crash\nRUN     train [gens] [pop] · test [1-3] · track <1-3> · stop · speed <1-40> · mut <0.01-1> · reset\nMISC    fx [on|off] · clear','y')},
+net(){if(!B.length)return log('  network is empty — start with: add rays 7','d');const T=['input ','hidden','output'];log('  #  type    block','d');B.forEach((b,i)=>log(`  ${i}  ${T[b.t]}  ${b.k=='rays'?'rays ×'+b.n:b.k=='dense'?`dense ${b.n} ${b.a}`:b.k}`));log(`  ${AR.L.join(' → ')}  ·  ${np} params`,'g')},
+view(){if(!B.length)return err('network is empty — try: add rays 7');
+ const L=AR.L,ins=B.filter(b=>b.t==0),hs=B.filter(b=>b.t==1),os=B.filter(b=>b.t==2),dots=(n,c)=>c.repeat(Math.min(n,24))+(n>24?'…':''),lk=i=>log(`│   ↓  ${L[i]}×${L[i+1]} + ${L[i+1]} bias = ${(L[i]+1)*L[i+1]} weights`,'d');
+ log(`┌ INPUT · ${AR.nIn} values`,'b');
+ ins.forEach((b,i)=>log(`│ ${i<ins.length-1?'├':'└'} ${b.k}${b.k=='rays'?' ×'+b.n:''}   ${dots(b.n,'○')}`,'b'));
+ hs.forEach((b,i)=>{lk(i);log(`├ HIDDEN ${i+1} · ${b.n} · ${b.a}\n│   ${dots(b.n,'●')}`,'y')});
+ lk(L.length-2);
+ log(`└ OUTPUT · ${os.length}`,'g');
+ os.forEach((b,i)=>log(`   ${i<os.length-1?'├':'└'} ${b.k}   ${b.k=='brake'?'sigmoid':'tanh'}`,'g'));
+ log(`   ${np} trainable params`,'d')},
+add([k,n,ac]){if(!k)return err('usage: add <rays|speed|bearing|dense|steer|throttle|brake> ...');
+ if(k=='dense'){n=+n;ac=ac||'tanh';if(!(n>=1&&n<=64))return err('dense needs 1-64 units, e.g. add dense 8 tanh');if(!ACT[ac])return err('activation: tanh | relu | sigmoid')}
+ else if(k=='rays'){n=n===undefined?7:+n;if(!(n>=1&&n<=15))return err('rays must be 1-15');if(B.some(b=>b.k=='rays'))return err('rays block exists — use: rays <n>')}
+ else if(INK.includes(k)||OUTK.includes(k)){if(B.some(b=>b.k==k))return err(k+' already added')}
+ else return err('unknown block "'+k+'"');
+ B.push(mkB(k,n,ac));srt();inv();CMD.net()},
+rm([a]){const i=a!==undefined&&!isNaN(+a)?+a:B.findIndex(b=>b.k==a);if(!B[i])return err('no such block — see net');B.splice(i,1);inv();CMD.net()},
+rays([a]){const n=+a;if(!(n>=1&&n<=15))return err('usage: rays <1-15>');const r=B.find(b=>b.k=='rays');if(r)r.n=n;else{B.push({t:0,k:'rays',n});srt()}inv();CMD.net()},
+
+reward(a){if(a[0]){const m=Object.keys(RW).filter(x=>x==a[0]||x.startsWith(a[0])||(a[0]=='cp'&&x=='checkpoints'));if(m.length!=1)return err('unknown reward — names: '+Object.keys(RW).join(' '));const v=+a[1];if(a[1]===undefined||!(v>=0&&v<=10))return err('weight 0-10, e.g. reward speed 2.5');RW[m[0]]=v;bestF=-1e9}
+ Object.keys(RW).forEach(k=>log(`  ${k}  ${'█'.repeat(Math.min(20,Math.round(RW[k]*4)))||'·'}  ${RW[k]}   ${RD[k]}`,RW[k]>0?'':'d'));log('weights apply to the next fitness evaluation — set them before train','d')},
+train([g,p]){if(!ready())return;g=+g||30;if(p){p=+p;if(!(p>=10&&p<=200))return err('population 10-200');POP=p;pop=null}if(g<1||g>500)return err('gens 1-500');
+ if(tk!=0){setTrack(0);log('training always runs on track 1 · switched back','d')}
+ if(!pop)initPop();mode='train';target=gen+g;newGen();log(`training ${g} gens · pop ${POP} · ${AR.nIn} inputs · ${np} params`,'y')},
+track([a]){if(a===undefined){TN.forEach((t,i)=>log(`  ${i+1}  ${t}${i==0?'  (training track)':''}${i==tk?'  ◀ current':''}`,i==tk?'g':''));return log('track <1|2|3> to switch · training always runs on track 1','d')}
+ const k=+a;if(!(k>=1&&k<=3))return err('usage: track <1|2|3>');if(mode=='train')return err('stop training first');setTrack(k-1);log(`track ${k} · ${TN[k-1]}${k>1?' — test only':''}`,'y')},
+stop(){if(mode=='idle')return log('nothing running','d');mode='idle';log('stopped','y')},
+test([n]){if(mode=='train')return err('stop training first');if(!best)return err('no trained model yet — run train first');if(n!==undefined){const k=+n;if(!(k>=1&&k<=3))return err('usage: test [1|2|3]');if(k-1!=tk)setTrack(k-1)}mode='test';cars=[mkCar(best)];gt=0;log(`testing best model on track ${tk+1} · ${TN[tk]}…`,'y')},
+speed([a]){const n=+a;if(!(n>=1&&n<=40))return err('speed 1-40 (sim ticks per frame)');SPD=Math.round(n);log('sim speed '+SPD,'d')},
+mut([a]){const n=+a;if(!(n>=.01&&n<=1))return err('mutation rate 0.01-1');MUT=n;log('mutation rate '+n,'d')},
+reset(){inv();log('population cleared','y')},
+
+fx([a]){if(a!='on'&&a!='off')return err('usage: fx on|off');document.body.classList.toggle('nofx',a=='off');log('screen effects '+a,'d')},
+clear(){out.textContent=''}};
+function exec(l){const[c,...a]=l.toLowerCase().split(/\s+/);if(!Object.hasOwn(CMD,c))return err(`unknown command '${c}' — try help`);try{CMD[c](a)}catch(e){err(e.message)}}
+let hs=[],hi=0;
+inp.onkeydown=e=>{if(e.key=='Enter'){const l=inp.value.trim();inp.value='';if(!l)return;hs.push(l);hi=hs.length;log('$ '+l,'b');exec(l)}
+ else if(e.key=='ArrowUp'){e.preventDefault();if(hi>0)inp.value=hs[--hi]}
+ else if(e.key=='ArrowDown'){e.preventDefault();hi=Math.min(hs.length,hi+1);inp.value=hs[hi]||''}
+ else if(e.key=='Tab'){e.preventDefault();const m=Object.keys(CMD).filter(c=>c.startsWith(inp.value));if(m.length==1)inp.value=m[0]+' '}};
+$('#tw').addEventListener('click',()=>inp.focus());
+// ---------- viewer ----------
+const cv=$('#cv'),cx=cv.getContext('2d'),st=$('#st');let cw=0,ch=0,dpr=1;
+new ResizeObserver(()=>{dpr=Math.min(devicePixelRatio||1,1.5);dirty=2;cw=cv.clientWidth;ch=cv.clientHeight;cv.width=Math.max(1,cw*dpr);cv.height=Math.max(1,ch*dpr)}).observe(cv);
+function car(c,al,col){cx.save();cx.translate(c.x,c.y);cx.rotate(c.a);cx.globalAlpha=al;cx.fillStyle=col;cx.fillRect(-6,-3.5,12,7);cx.restore()}
+function draw(){const s=Math.min(cw/W,ch/H)||1;cx.setTransform(dpr,0,0,dpr,0,0);cx.clearRect(0,0,cw,ch);cx.save();cx.translate((cw-W*s)/2,(ch-H*s)/2);cx.scale(s,s);cx.drawImage(tv,0,0);
+ const lead=mode=='train'?cars.reduce((m,c)=>c.alive&&(!m||c.tot>m.tot)?c:m,null):cars[0];
+ if(mode=='train')for(const c of cars)if(c.alive&&c!==lead)car(c,.4,Q.acc);
+ if(lead&&(lead.alive||mode!='train')){if(lead.alive){cx.strokeStyle=Q.yel;cx.lineWidth=1;cx.globalAlpha=.8;for(const[a,d]of lead.rs){cx.beginPath();cx.moveTo(lead.x,lead.y);cx.lineTo(lead.x+Math.cos(a)*d,lead.y+Math.sin(a)*d);cx.stroke()}}car(lead,1,lead.fin?Q.grn:lead.alive?Q.grn:Q.red)}
+ cx.restore();cx.font='16px '+FF;cx.fillStyle=Q.fg;
+ const al=cars.filter(c=>c.alive).length;
+ cx.fillText(mode=='train'?`GEN ${gen+1}/${target} · alive ${al}/${cars.length} · t ${(gt/60).toFixed(1)}s`:mode=='test'?`TEST · t ${(gt/60).toFixed(2)}s · ${pct(cars[0])}%`:cars.length?'idle':'idle — click the terminal and type: train',10,20);
+ if(hist.length>1){const mn=Math.min(...hist),mxv=Math.max(...hist),w=Math.min(160,cw/3),h=36,x0=10,y0=ch-h-12;cx.strokeStyle=Q.grn;cx.lineWidth=1.5;cx.beginPath();hist.forEach((v,i)=>{const x=x0+i/(hist.length-1)*w,y=y0+h-(v-mn)/((mxv-mn)||1)*h;i?cx.lineTo(x,y):cx.moveTo(x,y)});cx.stroke();cx.fillStyle=Q.dim;cx.fillText('best fitness / gen',x0,y0-5)}
+ const t=`${B.length?AR.L.join('→'):'empty net'} · pop ${POP} · gen ${gen} · best ${best?Math.round(bestF):'–'}`;if(st.textContent!=t)st.textContent=t}
+function frame(){const t0=performance.now();for(let k=0;k<SPD&&mode!='idle';k++){tick();if(performance.now()-t0>9)break}if(mode!='idle')dirty=2;if(dirty>0){draw();dirty--}requestAnimationFrame(frame)}
+// ---------- windows ----------
+let z=10;const wins=[...document.querySelectorAll('.win')];
+const foc=w=>{wins.forEach(x=>x.classList.toggle('f',x==w));w.style.zIndex=++z};
+wins.forEach(w=>{const b=w.querySelector('.tb');w.addEventListener('pointerdown',()=>foc(w));
+ b.onpointerdown=e=>{const r=w.getBoundingClientRect(),dx=e.clientX-r.left,dy=e.clientY-r.top;b.setPointerCapture(e.pointerId);b.style.cursor='grabbing';
+  b.onpointermove=e=>{w.style.left=Math.max(-w.offsetWidth+80,Math.min(innerWidth-80,e.clientX-dx))+'px';w.style.top=Math.max($('#bar').offsetHeight,Math.min(innerHeight-40,e.clientY-dy))+'px'};
+  b.onpointerup=()=>{b.onpointermove=null;b.style.cursor=''}}});
+function lay(){const vw=innerWidth,vh=innerHeight,top=$('#bar').offsetHeight+12,n=vw<900;
+ const tw=n?vw-24:Math.min(540,vw*.4),th=n?Math.round((vh-top-36)*.45):Math.min(560,vh-top-24);
+ Object.assign($('#tw').style,{left:'12px',top:(n?vh-th-12:top+8)+'px',width:tw+'px',height:th+'px'});
+ const vl=n?12:tw+36,wd=n?vw-24:vw-vl-12,ht=n?vh-top-th-36:Math.min(vh-top-40,wd*.72+36);
+ Object.assign($('#vw').style,{left:vl+'px',top:top+'px',width:wd+'px',height:ht+'px'})}
+const clk=()=>$('#clk').textContent=new Date().toLocaleString([],{weekday:'short',hour:'2-digit',minute:'2-digit'});
+// ---------- boot ----------
+inv();setTrack(0);lay();clk();setInterval(clk,30000);foc($('#tw'));
+log('neural racer v0.1','b');log('Design an MLP from blocks, weight the rewards, evolve cars around a nasty track.\nTrain on track 1, then test on tracks 1-3: track <n> · test.\nType help to get started: add blocks, set rewards, then train.','d');CMD.net();inp.focus();
+requestAnimationFrame(frame);
+</script></body></html>

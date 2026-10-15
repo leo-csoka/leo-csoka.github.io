@@ -53,6 +53,17 @@ li {
     margin-bottom: 0.8rem;
 }
 
+.embedded-content {
+    display: block;
+    box-sizing: border-box;
+    width: 100%;
+    height: min(80vh, 720px);
+    min-height: 560px;
+    margin-top: 1rem;
+    border: 1px solid #17482a;
+    background: #030805;
+}
+
 footer {
     margin-top: 4rem;
     border-top: 2px solid #333333;

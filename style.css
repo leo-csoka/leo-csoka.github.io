@@ -1,16 +1,19 @@
-/* Clean & Minimalist Theme */
+/* Clean & Minimalist Dark Pixel Theme */
+@import url('https://googleapis.com');
+
 :root {
-    --bg-color: #fcfcfc;
-    --text-color: #222222;
-    --accent-color: #0066cc;
+    --bg-color: #121212;
+    --text-color: #f5f5f5;
+    --accent-color: #00ff51; /* Neon cyan for a crisp retro contrast */
     --max-width: 650px;
 }
 
 body {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    font-family: "Press Start 2P", monospace, sans-serif;
     background-color: var(--bg-color);
     color: var(--text-color);
-    line-height: 1.6;
+    line-height: 1.8; /* Slightly increased for pixel font readability */
+    font-size: 14px;  /* Pixel fonts display best at specific sizes */
     margin: 0;
     padding: 2rem 1rem;
 }
@@ -22,13 +25,14 @@ header, main, footer {
 }
 
 header {
-    border-bottom: 1px solid #eaeaea;
+    border-bottom: 2px solid #333333; /* Darker border for the dark theme */
     margin-bottom: 2rem;
 }
 
 h1, h2 {
-    font-weight: 600;
+    font-weight: normal; /* Pixel fonts generally don't need bold weights */
     margin-top: 0;
+    color: var(--accent-color); /* Makes headings pop in retro styles */
 }
 
 a {
@@ -38,19 +42,20 @@ a {
 
 a:hover {
     text-decoration: underline;
+    text-underline-offset: 4px;
 }
 
 ul {
-    padding-left: 1.2rem;
+    padding-left: 1.5rem;
 }
 
 li {
-    margin-bottom: 0.5rem;
+    margin-bottom: 0.8rem;
 }
 
 footer {
     margin-top: 4rem;
-    border-top: 1px solid #eaeaea;
-    font-size: 0.85rem;
-    color: #666;
+    border-top: 2px solid #333333;
+    font-size: 0.75rem;
+    color: #888888;
 }

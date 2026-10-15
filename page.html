@@ -30,18 +30,19 @@ body{background:var(--wall);color:var(--fg);font:18px/1.3 var(--ff);text-shadow:
 .nofx #crt{display:none}.nofx,.nofx #in{text-shadow:none}
 @media(prefers-reduced-motion:reduce){#crt{animation:none}#crt::after{display:none}}
 @media(max-width:700px){#st{display:none}}
-</style></head><body>
+</style></head><body class="nofx">
 <div id="bar"><span><span class="ws"><u>1</u> 2 3</span></span><span id="clk"></span><span id="st" class="dim"></span></div>
 <div class="win" id="tw"><div class="tb"><span class="dots"><i></i><i></i><i></i></span><span class="tt">terminal<span class="sub">mlp-lab</span></span></div><div id="out"></div><div id="ln"><span class="b">$</span><input id="in" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="terminal input"></div></div>
 <div class="win" id="vw"><div class="tb"><span class="dots"><i></i><i></i><i></i></span><span class="tt">viewer<span class="sub" id="tn">track-01 · hairpin hell</span></span></div><div id="vb"><canvas id="cv"></canvas></div></div>
 <div id="crt" aria-hidden="true"></div>
 <script>
 const $=s=>document.querySelector(s),R=document.documentElement,css=n=>getComputedStyle(R).getPropertyValue(n).trim();
-const W=800,H=560,HW=19,K=12,SEG=24,MAXT=1600,MAXV=4,RAY=140,PI=Math.PI,FF='SuperDario,VT323,monospace';
+let W=800,H=560,MAXT=1600;const HW=19,K=12,SEG=24,MAXV=4,RAY=140,PI=Math.PI,FF='SuperDario,VT323,monospace';
 // ---------- track ----------
 const TR=[[[120,110],[280,70],[430,130],[540,70],[690,90],[740,190],[610,235],[700,320],[740,440],[630,510],[500,450],[420,520],[290,500],[200,420],[330,340],[130,290],[60,200]],
 [[140,280],[230,130],[420,90],[620,120],[710,260],[640,420],[450,470],[260,430]],
-[[150,90],[360,60],[560,90],[700,160],[730,290],[640,380],[720,470],[560,510],[450,440],[340,510],[200,490],[90,400],[200,320],[110,220]]];
+[[150,90],[360,60],[560,90],[700,160],[730,290],[640,380],[720,470],[560,510],[450,440],[340,510],[200,490],[90,400],[200,320],[110,220]],
+[[350,790],[600,780],[850,790],[1020,770],[1110,680],[1060,590],[1130,500],[1050,410],[1120,320],[1100,190],[1000,90],[860,60],[760,140],[650,60],[540,140],[430,60],[300,100],[170,60],[80,160],[130,270],[240,330],[480,350],[680,360],[770,425],[680,490],[480,500],[300,505],[150,570],[260,650],[120,730],[200,790]]];
 let N,C=[];
 function build(P){N=P.length*SEG;C=[];for(let i=0;i<P.length;i++){const p=[-1,0,1,2].map(k=>P[(i+k+P.length)%P.length]);for(let s=0;s<SEG;s++){const t=s/SEG,t2=t*t,t3=t2*t;C.push([0,1].map(d=>.5*(2*p[1][d]+(-p[0][d]+p[2][d])*t+(2*p[0][d]-5*p[1][d]+4*p[2][d]-p[3][d])*t2+(-p[0][d]+3*p[1][d]-3*p[2][d]+p[3][d])*t3)))}}}
 const mkC=()=>{const c=document.createElement('canvas');c.width=W;c.height=H;return c};
@@ -66,8 +67,8 @@ function paint(){dirty=2;Q={fg:css('--fg'),dim:css('--dim'),acc:css('--acc'),grn
  {const[a,t]=dir(0),s=HW*2/6;x.save();x.translate(a[0],a[1]);x.rotate(t);for(let r=0;r<2;r++)for(let c=0;c<6;c++){x.fillStyle=(r+c)%2?Q.fg:Q.wall;x.fillRect((r-1)*s,-HW+c*s,s,s)}x.restore()}}
 new MutationObserver(paint).observe(R,{attributes:true,attributeFilter:['data-theme']});
 
-let tk=0;const TN=['hairpin hell','sunday loop','switchback'];
-function setTrack(i){tk=i;build(TR[i]);mask();paint();cars=[];mode='idle';$('#tn').textContent=`track-0${i+1} · ${TN[i]}`}
+let tk=0;const TN=['hairpin hell','sunday loop','switchback','gauntlet'];
+function setTrack(i){tk=i;const big=i==3;W=big?1200:800;H=big?840:560;MAXT=big?4200:1600;mc.width=tv.width=W;mc.height=tv.height=H;M=new Uint8Array(W*H);build(TR[i]);mask();paint();cars=[];mode='idle';$('#tn').textContent=`track-0${i+1} · ${TN[i]}`}
 // ---------- network ----------
 const INK=['rays','speed','bearing'],OUTK=['steer','throttle','brake'],ACT={tanh:Math.tanh,relu:x=>x>0?x:0,sigmoid:x=>1/(1+Math.exp(-x))};
 
@@ -119,7 +120,7 @@ function log(t,c=''){const d=document.createElement('div');if(c)d.className=c;d.
 const err=m=>{log('error: '+m,'r')};
 function ready(){if(!AR.nIn)return err('no input blocks — try: add rays 7');const k=AR.o.map(b=>b.k);if(!k.includes('steer')||!k.includes('throttle'))return err('outputs needed: add steer · add throttle');if(!Object.values(RW).some(v=>v>0))return err('all reward weights are 0 — try: reward checkpoints 1');return 1}
 const CMD={
-help(){log('BLOCKS  add rays <n> · add speed · add bearing   (inputs)\n        add dense <units> [tanh|relu|sigmoid]   (hidden)\n        add steer · add throttle · add brake   (outputs)\nNET     net · view · rm <#|name> · rays <n>\nREWARD  reward · reward <name> <0-10>\n        names: checkpoints time speed center smooth crash\nRUN     train [gens] [pop] · test [1-3] · track <1-3> · stop · speed <1-40> · mut <0.01-1> · reset\nMISC    fx [on|off] · clear','y')},
+help(){log('BLOCKS  add rays <n> · add speed · add bearing   (inputs)\n        add dense <units> [tanh|relu|sigmoid]   (hidden)\n        add steer · add throttle · add brake   (outputs)\nNET     net · view · rm <#|name> · rays <n>\nREWARD  reward · reward <name> <0-10>\n        names: checkpoints time speed center smooth crash\nRUN     train [gens] [pop] · test [1-4] · track <1-4> · stop · speed <1-40> · mut <0.01-1> · reset\nMISC    fx [on|off] · clear','y')},
 net(){if(!B.length)return log('  network is empty — start with: add rays 7','d');const T=['input ','hidden','output'];log('  #  type    block','d');B.forEach((b,i)=>log(`  ${i}  ${T[b.t]}  ${b.k=='rays'?'rays ×'+b.n:b.k=='dense'?`dense ${b.n} ${b.a}`:b.k}`));log(`  ${AR.L.join(' → ')}  ·  ${np} params`,'g')},
 view(){if(!B.length)return err('network is empty — try: add rays 7');
  const L=AR.L,ins=B.filter(b=>b.t==0),hs=B.filter(b=>b.t==1),os=B.filter(b=>b.t==2),dots=(n,c)=>c.repeat(Math.min(n,24))+(n>24?'…':''),lk=i=>log(`│   ↓  ${L[i]}×${L[i+1]} + ${L[i+1]} bias = ${(L[i]+1)*L[i+1]} weights`,'d');
@@ -144,10 +145,10 @@ reward(a){if(a[0]){const m=Object.keys(RW).filter(x=>x==a[0]||x.startsWith(a[0])
 train([g,p]){if(!ready())return;g=+g||30;if(p){p=+p;if(!(p>=10&&p<=200))return err('population 10-200');POP=p;pop=null}if(g<1||g>500)return err('gens 1-500');
  if(tk!=0){setTrack(0);log('training always runs on track 1 · switched back','d')}
  if(!pop)initPop();mode='train';target=gen+g;newGen();log(`training ${g} gens · pop ${POP} · ${AR.nIn} inputs · ${np} params`,'y')},
-track([a]){if(a===undefined){TN.forEach((t,i)=>log(`  ${i+1}  ${t}${i==0?'  (training track)':''}${i==tk?'  ◀ current':''}`,i==tk?'g':''));return log('track <1|2|3> to switch · training always runs on track 1','d')}
- const k=+a;if(!(k>=1&&k<=3))return err('usage: track <1|2|3>');if(mode=='train')return err('stop training first');setTrack(k-1);log(`track ${k} · ${TN[k-1]}${k>1?' — test only':''}`,'y')},
+track([a]){if(a===undefined){TN.forEach((t,i)=>log(`  ${i+1}  ${t}${i==0?'  (training track)':''}${i==tk?'  ◀ current':''}`,i==tk?'g':''));return log('track <1|2|3|4> to switch · training always runs on track 1','d')}
+ const k=+a;if(!(k>=1&&k<=4))return err('usage: track <1-4>');if(mode=='train')return err('stop training first');setTrack(k-1);log(`track ${k} · ${TN[k-1]}${k>1?' — test only':''}`,'y')},
 stop(){if(mode=='idle')return log('nothing running','d');mode='idle';log('stopped','y')},
-test([n]){if(mode=='train')return err('stop training first');if(!best)return err('no trained model yet — run train first');if(n!==undefined){const k=+n;if(!(k>=1&&k<=3))return err('usage: test [1|2|3]');if(k-1!=tk)setTrack(k-1)}mode='test';cars=[mkCar(best)];gt=0;log(`testing best model on track ${tk+1} · ${TN[tk]}…`,'y')},
+test([n]){if(mode=='train')return err('stop training first');if(!best)return err('no trained model yet — run train first');if(n!==undefined){const k=+n;if(!(k>=1&&k<=4))return err('usage: test [1-4]');if(k-1!=tk)setTrack(k-1)}mode='test';cars=[mkCar(best)];gt=0;log(`testing best model on track ${tk+1} · ${TN[tk]}…`,'y')},
 speed([a]){const n=+a;if(!(n>=1&&n<=40))return err('speed 1-40 (sim ticks per frame)');SPD=Math.round(n);log('sim speed '+SPD,'d')},
 mut([a]){const n=+a;if(!(n>=.01&&n<=1))return err('mutation rate 0.01-1');MUT=n;log('mutation rate '+n,'d')},
 reset(){inv();log('population cleared','y')},
@@ -190,6 +191,6 @@ function lay(){const vw=innerWidth,vh=innerHeight,top=$('#bar').offsetHeight+12,
 const clk=()=>$('#clk').textContent=new Date().toLocaleString([],{weekday:'short',hour:'2-digit',minute:'2-digit'});
 // ---------- boot ----------
 inv();setTrack(0);lay();clk();setInterval(clk,30000);foc($('#tw'));
-log('neural racer v0.1','b');log('Design an MLP from blocks, weight the rewards, evolve cars around a nasty track.\nTrain on track 1, then test on tracks 1-3: track <n> · test.\nType help to get started: add blocks, set rewards, then train.','d');CMD.net();inp.focus();
+log('neural racer v0.1','b');log('Design an MLP from blocks, weight the rewards, evolve cars around a nasty track.\nTrain on track 1, then test on tracks 1-4: track <n> · test.\nType help to get started: add blocks, set rewards, then train.\nCRT effects are off by default — type fx on to enable them.','d');CMD.net();inp.focus();
 requestAnimationFrame(frame);
 </script></body></html>

@@ -1,11 +1,11 @@
 /* Clean & Minimalist Dark Pixel Theme */
-@import url('https://googleapis.com');
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
 
 :root {
     --bg-color: #121212;
     --text-color: #f5f5f5;
     --accent-color: #00ff51; /* Neon cyan for a crisp retro contrast */
-    --max-width: 650px;
+    --max-width: 1280px;
 }
 
 body {
@@ -57,8 +57,8 @@ li {
     display: block;
     box-sizing: border-box;
     width: 100%;
-    height: min(80vh, 720px);
-    min-height: 560px;
+    height: min(90vh, 1000px);
+    min-height: 650px;
     margin-top: 1rem;
     border: 1px solid #17482a;
     background: #030805;

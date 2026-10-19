@@ -9,39 +9,36 @@
 <body>
 
     <header>
-        <h1>leo-csoka</h1>
+        <h1 data-title="leo-csoka">leo-csoka</h1>
         <p>welcome to my page!</p>
     </header>
 
     <main>
-        <section>
-            <h2>desc desc desc</h2>
+        <section class="content-card">
+            <h2>About me</h2>
             <p>I'm a beginner trying to make neat things. The projects on here were created for my CSII class.</p>
         </section>
 
-        <section>
-            <h2>Project:</h2>
-            <ul>
+        <section class="content-card">
+            <h2>Featured project</h2>
+            <ul class="project-list">
                 <li>P1: One Day Agentic Project - train an MLP racer from scratch in a virtual terminal</li>
             </ul>
             <iframe src="./page.html" class="embedded-content" title="Interactive neural racer"></iframe>
         </section>
 
-        <section>
-            <h2>Assignment:</h2>
-            <ul>
+        <section class="content-card">
+            <h2>Class assignment</h2>
+            <ul class="project-list">
                 <li>7.2.6 Our First Array</li>
-                <p> public class FirstArray extends ConsoleProgram
-                    {
-                        public void run()
-                        {
-                            int[] firstArray = {2, 4, 6, 8, 10};
-                            System.out.println(firstArray[1]);
-                            System.out.println(firstArray[3]);
-                        }
-                    }
-                </p>
             </ul>
+            <pre class="code-block"><code>public class FirstArray extends ConsoleProgram {
+    public void run() {
+        int[] firstArray = {2, 4, 6, 8, 10};
+        System.out.println(firstArray[1]);
+        System.out.println(firstArray[3]);
+    }
+}</code></pre>
         </section>
 
     </main>

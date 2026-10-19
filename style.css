@@ -3,8 +3,8 @@
 
 :root {
     --bg-color: #121212;
-    --text-color: #f5f5f5;
-    --accent-color: #ffb310;
+    --text-color: #c9c9cf;
+    --accent-color: #ffb347;
     --max-width: 1280px;
 }
 
@@ -12,8 +12,8 @@ body {
     font-family: "Pixelify Sans", monospace, sans-serif;
     background-color: var(--bg-color);
     color: var(--text-color);
-    line-height: 1.8; /* Slightly increased for pixel font readability */
-    font-size: 14px;  /* Pixel fonts display best at specific sizes */
+    line-height: 1.7;
+    font-size: 17px;
     margin: 0;
     padding: 2rem 1rem;
 }
@@ -32,7 +32,68 @@ header {
 h1, h2 {
     font-weight: normal; /* Pixel fonts generally don't need bold weights */
     margin-top: 0;
-    color: var(--accent-color); /* Makes headings pop in retro styles */
+    color: var(--accent-color);
+}
+
+h1 {
+    position: relative;
+    isolation: isolate;
+    display: inline-block;
+    font-size: clamp(2rem, 6vw, 3.25rem);
+    letter-spacing: 0.04em;
+}
+
+h1::before,
+h1::after {
+    content: attr(data-title);
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+}
+
+h1::before {
+    color: #61d9e8;
+    opacity: 0.65;
+    transform: translateX(4px);
+}
+
+h1::after {
+    color: #d58be8;
+    opacity: 0.45;
+    transform: translateX(8px);
+}
+
+.content-card {
+    margin-bottom: 1.5rem;
+    padding: 1.5rem;
+    border: 1px solid #343039;
+    border-radius: 12px;
+    background: #19181d;
+}
+
+.content-card h2 {
+    margin-bottom: 0.75rem;
+}
+
+.content-card p {
+    margin-bottom: 0;
+}
+
+.project-list {
+    margin: 0;
+}
+
+.code-block {
+    overflow-x: auto;
+    margin: 1rem 0 0;
+    padding: 1.25rem;
+    border: 1px solid #36343c;
+    border-radius: 8px;
+    background: #101014;
+    color: #d2d2da;
+    font: 0.9rem/1.65 ui-monospace, SFMono-Regular, Consolas, monospace;
+    tab-size: 4;
 }
 
 a {

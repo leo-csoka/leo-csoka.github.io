@@ -115,19 +115,19 @@ h2::before {
 h1::before {
     color: #ff883d;
     opacity: 0.65;
-    transform: translateX(4px);
+    transform: translateX(2px);
 }
 
 h1::after {
     color: #ff543d;
     opacity: 0.45;
-    transform: translateX(8px);
+    transform: translateX(4px);
 }
 
 h2::before {
     color: #b762f7;
     opacity: 0.65;
-    transform: translateX(4px);
+    transform: translateX(2px);
 }
 
 .content-card {

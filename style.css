@@ -97,11 +97,14 @@ header::after {
 }
 
 h2 {
-    color: var(--accent-color);
+    color: var(--title-color);
+    position: relative;
+    isolation: isolate;
 }
 
 h1::before,
-h1::after {
+h1::after,
+h2::before {
     content: attr(data-title);
     position: absolute;
     inset: 0;
@@ -119,14 +122,6 @@ h1::after {
     color: #ff543d;
     opacity: 0.45;
     transform: translateX(8px);
-}
-
-h2::before {
-    content: attr(data-title);
-    position: absolute;
-    inset: 0;
-    z-index: -1;
-    pointer-events: none;
 }
 
 h2::before {

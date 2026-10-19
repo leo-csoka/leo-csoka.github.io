@@ -1,15 +1,15 @@
 /* Clean & Minimalist Dark Pixel Theme */
-@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;500;600;700&display=swap');
 
 :root {
     --bg-color: #121212;
     --text-color: #f5f5f5;
-    --accent-color: #00ff51; /* Neon cyan for a crisp retro contrast */
+    --accent-color: #ffb310;
     --max-width: 1280px;
 }
 
 body {
-    font-family: "Press Start 2P", monospace, sans-serif;
+    font-family: "Pixelify Sans", monospace, sans-serif;
     background-color: var(--bg-color);
     color: var(--text-color);
     line-height: 1.8; /* Slightly increased for pixel font readability */

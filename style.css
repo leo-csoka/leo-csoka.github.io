@@ -121,6 +121,20 @@ h1::after {
     transform: translateX(8px);
 }
 
+h2::before {
+    content: attr(data-title);
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+}
+
+h2::before {
+    color: #b762f7;
+    opacity: 0.65;
+    transform: translateX(4px);
+}
+
 .content-card {
     margin-bottom: 1rem;
     padding: 1rem 1.2rem;

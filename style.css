@@ -2,45 +2,102 @@
 @import url('https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;500;600;700&display=swap');
 
 :root {
-    --bg-color: #121212;
+    --bg-color: #12121a;
     --text-color: #c9c9cf;
     --accent-color: #ffb347;
     --max-width: 1280px;
+    --title-color: #dddde2;
 }
 
 body {
     font-family: "Pixelify Sans", monospace, sans-serif;
+    position: relative;
+    isolation: isolate;
     background-color: var(--bg-color);
+    background-image: linear-gradient(135deg, #11111a 0%, #1a1722 52%, #10171b 100%);
     color: var(--text-color);
-    line-height: 1.7;
+    line-height: 1.6;
     font-size: 17px;
     margin: 0;
-    padding: 2rem 1rem;
+    padding: 1.25rem 1rem;
+}
+
+body::before,
+body::after {
+    content: "";
+    position: fixed;
+    inset: -10%;
+    z-index: -1;
+    pointer-events: none;
+}
+
+body::before {
+    background:
+        radial-gradient(ellipse at 16% 20%, rgba(106, 71, 145, 0.2), transparent 35%),
+        radial-gradient(ellipse at 82% 65%, rgba(38, 115, 112, 0.17), transparent 38%);
+    filter: blur(38px);
+}
+
+body::after {
+    inset: 0;
+    background: radial-gradient(circle, rgba(255, 179, 71, 0.3) 1px, transparent 1.7px) 0 0 / 8px 8px;
+    mask-image:
+        radial-gradient(ellipse at 14% 22%, #000 0, transparent 27%),
+        radial-gradient(ellipse at 78% 35%, #000 0, transparent 24%),
+        radial-gradient(ellipse at 56% 84%, #000 0, transparent 28%);
+    filter: blur(2px);
+    opacity: 0.38;
+    animation: dither-flicker 13s steps(1, end) infinite;
 }
 
 header, main, footer {
     max-width: var(--max-width);
     margin: 0 auto;
-    padding: 1rem 0;
+    padding: 0.6rem 0;
 }
 
 header {
-    border-bottom: 2px solid #333333; /* Darker border for the dark theme */
-    margin-bottom: 2rem;
+    position: relative;
+    margin-bottom: 0.8rem;
+    padding-bottom: 0.85rem;
+}
+
+header::after,
+footer::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(255, 179, 71, 0.4) 18%, rgba(201, 201, 207, 0.24) 50%, rgba(255, 179, 71, 0.4) 82%, transparent);
 }
 
 h1, h2 {
     font-weight: normal; /* Pixel fonts generally don't need bold weights */
     margin-top: 0;
-    color: var(--accent-color);
 }
 
 h1 {
+    color: var(--title-color);
     position: relative;
     isolation: isolate;
     display: inline-block;
+    line-height: 1.1;
+    margin-bottom: 0;
     font-size: clamp(2rem, 6vw, 3.25rem);
     letter-spacing: 0.04em;
+}
+
+header p {
+    margin: 0.15rem 0 0;
+}
+
+header::after {
+    bottom: 0;
+}
+
+h2 {
+    color: var(--accent-color);
 }
 
 h1::before,
@@ -53,27 +110,27 @@ h1::after {
 }
 
 h1::before {
-    color: #61d9e8;
+    color: #ff883d;
     opacity: 0.65;
     transform: translateX(4px);
 }
 
 h1::after {
-    color: #d58be8;
+    color: #ff543d;
     opacity: 0.45;
     transform: translateX(8px);
 }
 
 .content-card {
-    margin-bottom: 1.5rem;
-    padding: 1.5rem;
+    margin-bottom: 1rem;
+    padding: 1rem 1.2rem;
     border: 1px solid #343039;
     border-radius: 12px;
-    background: #19181d;
+    background: rgba(25, 24, 29, 0.9);
 }
 
 .content-card h2 {
-    margin-bottom: 0.75rem;
+    margin-bottom: 0.45rem;
 }
 
 .content-card p {
@@ -111,7 +168,7 @@ ul {
 }
 
 li {
-    margin-bottom: 0.8rem;
+    margin-bottom: 0.45rem;
 }
 
 .embedded-content {
@@ -126,8 +183,34 @@ li {
 }
 
 footer {
-    margin-top: 4rem;
-    border-top: 2px solid #333333;
-    font-size: 0.75rem;
-    color: #888888;
+    position: relative;
+    margin-top: 1.25rem;
+    padding-top: 0.75rem;
+    font-size: 0.95rem;
+    color: #a5a2ad;
+}
+
+footer::before {
+    top: 0;
+}
+
+footer p {
+    margin: 0;
+}
+
+@keyframes dither-flicker {
+    0%, 18%, 38%, 63%, 100% {
+        opacity: 0.28;
+        transform: translate3d(0, 0, 0);
+    }
+    20%, 41%, 66% {
+        opacity: 0.55;
+        transform: translate3d(2px, -1px, 0);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    body::after {
+        animation: none;
+    }
 }
